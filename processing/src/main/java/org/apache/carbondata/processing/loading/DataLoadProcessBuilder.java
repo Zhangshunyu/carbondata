@@ -69,11 +69,11 @@ public final class DataLoadProcessBuilder {
       return buildInternalWithNoConverter(inputIterators, configuration, sortScope, true);
     } else if (loadModel.isJsonFileLoad()) {
       return buildInternalWithJsonInputProcessor(inputIterators, configuration, sortScope);
-    } else if (!configuration.isSortTable() || sortScope.equals(
-        SortScopeOptions.SortScope.NO_SORT)) {
-      return buildInternalForNoSort(inputIterators, configuration);
     } else if (configuration.getBucketingInfo() != null) {
       return buildInternalForBucketing(inputIterators, configuration);
+    } else if (!configuration.isSortTable() || sortScope.equals(
+            SortScopeOptions.SortScope.NO_SORT)) {
+      return buildInternalForNoSort(inputIterators, configuration);
     } else {
       return buildInternal(inputIterators, configuration);
     }

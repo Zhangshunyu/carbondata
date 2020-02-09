@@ -57,7 +57,7 @@ public class HashPartitionerImpl implements Partitioner<CarbonRow> {
   public int getPartition(CarbonRow key) {
     int hashCode = 0;
     for (Hash hash : hashes) {
-      hashCode += hash.getHash(key.getData());
+        hashCode += hash.getHash(key.getData());
     }
     return (hashCode & Integer.MAX_VALUE) % numberOfBuckets;
   }
@@ -102,7 +102,7 @@ public class HashPartitionerImpl implements Partitioner<CarbonRow> {
 
     @Override
     public int getHash(Object[] value) {
-      return value[index] != null ? value[index].hashCode() : 0;
+      return value[index] != null ? new String((byte[])value[index]).hashCode() : 0;
     }
   }
 }
