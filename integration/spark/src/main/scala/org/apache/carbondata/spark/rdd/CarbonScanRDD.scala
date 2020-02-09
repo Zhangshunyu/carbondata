@@ -96,7 +96,7 @@ class CarbonScanRDD[T: ClassTag](
 
   private var directFill = false
 
-  private val bucketedTable = tableInfo.getFactTable.getBucketingInfo
+  private val bucketInfo = tableInfo.getFactTable.getBucketingInfo
 
   private var segmentsToAccess: Array[Segment] = _
 
@@ -262,11 +262,11 @@ class CarbonScanRDD[T: ClassTag](
           CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT)
       }
       // If bucketing is enabled on table then partitions should be grouped based on buckets.
-      if (bucketedTable != null) {
+      if (bucketInfo != null) {
         var i = 0
         val bucketed =
           splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).groupBy(f => f.getBucketId)
-        (0 until bucketedTable.getNumOfRanges).map { bucketId =>
+        (0 until bucketInfo.getNumOfRanges).map { bucketId =>
           val bucketPartitions = bucketed.getOrElse(bucketId.toString, Nil)
           val multiBlockSplit =
             new CarbonMultiBlockSplit(

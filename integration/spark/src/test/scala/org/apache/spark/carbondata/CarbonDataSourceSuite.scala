@@ -227,13 +227,6 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS create_source_test2")
   }
 
-  test("test to create bucket columns with int field") {
-    sql("drop table if exists create_source")
-    intercept[Exception] {
-      sql("create table create_source(intField int, stringField string, complexField array<string>) USING carbondata OPTIONS('bucketnumber'='1', 'bucketcolumns'='intField')")
-    }
-  }
-
   test("test to create bucket columns with complex data type field") {
     sql("drop table if exists create_source")
     intercept[Exception] {
