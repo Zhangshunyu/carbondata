@@ -311,7 +311,7 @@ object CarbonSparkSqlParserUtil {
       sparkSession: SparkSession,
       selectQuery: Option[LogicalPlan] = None): TableInfo = {
     val tableProperties = normalizeProperties(getProperties(table))
-    val options = new CarbonOption(tableProperties)
+    val options = new CarbonOption(Map(tableProperties.toSeq: _*))
     // validate streaming property
     validateStreamingProperty(options)
     val parser = new CarbonSpark2SqlParser()
