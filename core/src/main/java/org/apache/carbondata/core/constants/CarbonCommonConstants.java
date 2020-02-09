@@ -2379,4 +2379,18 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_SI_SEGMENT_MERGE_DEFAULT = "false";
 
+  /**
+   * Hash method of bucket table
+   */
+  public static final String BUCKET_HASH_METHOD = "bucket_hash_method";
+  public static final String BUCKET_HASH_METHOD_DEFAULT = "murmur3_x86_32";
+  public static final String BUCKET_HASH_METHOD_MURMUR3_X86_32 = "murmur3_x86_32";
+  public static final String BUCKET_HASH_METHOD_NATIVE = "native";
+
+  /**
+   * bucket properties
+   */
+  public static final String BUCKET_COLUMNS = "bucketcolumns";
+  public static final String BUCKET_NUM = "bucketnumber";
+
 }

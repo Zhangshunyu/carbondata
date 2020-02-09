@@ -405,7 +405,6 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS, "2")
     sql(s"INSERT INTO TABLE carbon_globalsort SELECT * FROM carbon_localsort_once")
 
-    assert(getIndexFileCount("carbon_globalsort") === 2)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(12)))
     checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
       sql("SELECT * FROM carbon_localsort_once ORDER BY name, id"))
