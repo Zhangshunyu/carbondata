@@ -51,9 +51,10 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   test("test create table with buckets") {
     sql("CREATE TABLE t4 (ID Int, date Timestamp, country String, name String, phonetype String," +
         "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
-        "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
+        "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name', 'sort_columns'='name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t4")
     val table = CarbonEnv.getCarbonTable(Option("default"), "t4")(sqlContext.sparkSession)
+    sql("select count(*) from t4").show()
     if (table != null && table.getBucketingInfo() != null) {
       assert(true)
     } else {
