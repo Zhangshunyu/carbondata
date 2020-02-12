@@ -311,7 +311,14 @@ object CarbonSparkSqlParserUtil {
       sparkSession: SparkSession,
       selectQuery: Option[LogicalPlan] = None): TableInfo = {
     val tableProperties = normalizeProperties(getProperties(table))
-    val options = new CarbonOption(tableProperties)
+    val updatedProperties = mutable.Map(tableProperties.toSeq: _*)
+    if (table.bucketSpec.isDefined) {
+      val bucketSpec = table.bucketSpec.get
+      updatedProperties.put("bucketcolumns", bucketSpec.bucketColumnNames.mkString)
+      updatedProperties.put("sort_columns", bucketSpec.bucketColumnNames.mkString)
+      updatedProperties.put("bucketnumber", bucketSpec.numBuckets.toString)
+    }
+    val options = new CarbonOption(Map(updatedProperties.toSeq: _*))
     // validate streaming property
     validateStreamingProperty(options)
     val parser = new CarbonSpark2SqlParser()
@@ -354,14 +361,14 @@ object CarbonSparkSqlParserUtil {
       throw new MalformedCarbonCommandException(
         "Creating table without column(s) is not supported")
     }
-    if (isExternal && fields.isEmpty && tableProperties.nonEmpty) {
+    if (isExternal && fields.isEmpty && updatedProperties.nonEmpty) {
       // as fields are always zero for external table, cannot validate table properties.
       throw new MalformedCarbonCommandException(
         "Table properties are not supported for external table")
     }
 
     // validate tblProperties
-    val tblProperties = mutable.Map(tableProperties.toSeq: _*)
+    val tblProperties = mutable.Map(updatedProperties.toSeq: _*)
     val bucketFields =
       parser.getBucketFields(tblProperties, fields, options)
     var isTransactionalTable: Boolean = true

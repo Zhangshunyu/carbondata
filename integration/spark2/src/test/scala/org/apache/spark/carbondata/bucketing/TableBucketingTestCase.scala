@@ -17,11 +17,10 @@
 
 package org.apache.spark.carbondata.bucketing
 
-import org.apache.spark.sql.CarbonEnv
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.execution.exchange.Exchange
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -46,6 +45,8 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS t9")
     sql("DROP TABLE IF EXISTS t10")
     sql("DROP TABLE IF EXISTS t11")
+    sql("DROP TABLE IF EXISTS t12")
+    sql("DROP TABLE IF EXISTS t13")
   }
 
   test("test create table with buckets") {
@@ -54,7 +55,6 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name', 'sort_columns'='name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t4")
     val table = CarbonEnv.getCarbonTable(Option("default"), "t4")(sqlContext.sparkSession)
-    sql("select count(*) from t4").show()
     if (table != null && table.getBucketingInfo() != null) {
       assert(true)
     } else {
@@ -235,6 +235,64 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       .count()
   }
 
+  test("test create carbon table with buckets like hive sql") {
+    sql("CREATE TABLE t13 (ID Int, date Timestamp, country String, name String, phonetype String," +
+      "serialname String, salary Int) STORED AS carbondata CLUSTERED BY (name) INTO 4 BUCKETS")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t13")
+    val table = CarbonEnv.getCarbonTable(Option("default"), "t13")(sqlContext.sparkSession)
+    checkAnswer(sql("select count(*) from t13"), Row(100))
+    if (table != null && table.getBucketingInfo() != null) {
+      assert(true)
+    } else {
+      assert(false, "Bucketing info does not exist")
+    }
+  }
+
+  test("test join of carbon bucket table created like hive sql with parquet table") {
+    sql("CREATE TABLE t12 (ID Int, date Timestamp, country String, name String, phonetype String," +
+      "serialname String, salary Int) STORED AS carbondata CLUSTERED BY (name) INTO 4 BUCKETS")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t12")
+
+    sql("DROP TABLE IF EXISTS bucketed_parquet_table")
+    sql("select * from t12").write
+      .format("parquet")
+      .bucketBy(4, "name")
+      .saveAsTable("bucketed_parquet_table")
+
+    checkAnswer(sql("select count(*) from t12"), Row(100))
+    checkAnswer(sql("select count(*) from bucketed_parquet_table"), Row(100))
+
+
+    sql("select * from bucketed_parquet_table").show(100)
+    val plan = sql(
+      """
+        |select t1.*, t2.*
+        |from t12 t1, bucketed_parquet_table t2
+        |where t1.name = t2.name
+      """.stripMargin).queryExecution.executedPlan
+    var shuffleExists = false
+    plan.collect {
+      case s: Exchange if (s.getClass.getName.equals
+      ("org.apache.spark.sql.execution.exchange.ShuffleExchange") ||
+        s.getClass.getName.equals
+        ("org.apache.spark.sql.execution.exchange.ShuffleExchangeExec"))
+      => shuffleExists = true
+    }
+    assert(!shuffleExists, "shuffle should not exist on bucket tables")
+    // TODO join result is not correct
+    sql(
+      """
+        |select t1.*, t2.*
+        |from t12 t1, bucketed_parquet_table t2
+        |where t1.name = t2.name
+      """.stripMargin).show(100, false)
+    checkAnswer(sql("select count(*) from " +
+      "(select t1.*, t2.* from t12 t1, bucketed_parquet_table t2 where t1.name = t2.name)tmp"),
+      Row(100))
+    sql("DROP TABLE bucketed_parquet_table")
+  }
+
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS t4")
     sql("DROP TABLE IF EXISTS t5")
@@ -243,6 +301,9 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS t8")
     sql("DROP TABLE IF EXISTS t9")
     sql("DROP TABLE IF EXISTS t10")
+    sql("DROP TABLE IF EXISTS t11")
+    sql("DROP TABLE IF EXISTS t12")
+    sql("DROP TABLE IF EXISTS t13")
     sql("DROP TABLE IF EXISTS bucketed_parquet_table")
     sql("DROP TABLE IF EXISTS parquet_table")
     sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", threshold.toString)
