@@ -40,6 +40,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS t4")
     sql("DROP TABLE IF EXISTS t5")
     sql("DROP TABLE IF EXISTS t6")
+    sql("DROP TABLE IF EXISTS t6_")
     sql("DROP TABLE IF EXISTS t7")
     sql("DROP TABLE IF EXISTS t8")
     sql("DROP TABLE IF EXISTS t9")
@@ -127,6 +128,12 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
         |from t5 t1, t5 t2
         |where t1.name = t2.name
       """.stripMargin).queryExecution.executedPlan
+    checkAnswer(sql(
+      """select count(*) from
+        |(select t1.*, t2.*
+        |from t5 t1, t5 t2
+        |where t1.name = t2.name) temp
+      """.stripMargin), Row(100))
     var shuffleExists = false
     plan.collect {
       case s: Exchange if (s.getClass.getName.equals
@@ -143,12 +150,22 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
         "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t6")
+    sql("CREATE TABLE t6_ (ID Int, date Timestamp, country String, name String, phonetype String," +
+      "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
+      "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t6_")
     val plan = sql(
       """
         |select t1.*, t2.*
-        |from t6 t1, t6 t2
+        |from t6 t1, t6_ t2
         |where t1.name = t2.name
       """.stripMargin).queryExecution.executedPlan
+    checkAnswer(sql(
+      """select count(*) from
+        |(select t1.*, t2.*
+        |from t6 t1, t6_ t2
+        |where t1.name = t2.name) temp
+      """.stripMargin), Row(100))
     var shuffleExists = false
     plan.collect {
       case s: Exchange if (s.getClass.getName.equals
@@ -178,6 +195,12 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
         |from t7 t1, bucketed_parquet_table t2
         |where t1.name = t2.name
       """.stripMargin).queryExecution.executedPlan
+    checkAnswer(sql(
+      """select count(*) from
+        |(select t1.*, t2.*
+        |from t7 t1, bucketed_parquet_table t2
+        |where t1.name = t2.name) temp
+      """.stripMargin), Row(100))
     var shuffleExists = false
     plan.collect {
       case s: Exchange if (s.getClass.getName.equals
@@ -207,6 +230,12 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
         |from t8 t1, parquet_table t2
         |where t1.name = t2.name
       """.stripMargin).queryExecution.executedPlan
+    checkAnswer(sql(
+      """select count(*) from
+        |(select t1.*, t2.*
+        |from t8 t1, parquet_table t2
+        |where t1.name = t2.name) temp
+      """.stripMargin), Row(100))
     var shuffleExists = false
     plan.collect {
       case s: Exchange if (s.getClass.getName.equals
@@ -219,25 +248,9 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE parquet_table")
   }
 
-  // TODO: make pluggable CarbonOptimizerUtil.transformForScalarSubQuery
-  ignore("test scalar subquery with equal") {
-    sql(
-      """select sum(salary) from t4 t1
-        |where ID = (select sum(ID) from t4 t2 where t1.name = t2.name)""".stripMargin)
-      .count()
-  }
-
-  // TODO: make pluggable CarbonOptimizerUtil.transformForScalarSubQuery
-  ignore("test scalar subquery with lessthan") {
-    sql(
-      """select sum(salary) from t4 t1
-        |where ID < (select sum(ID) from t4 t2 where t1.name = t2.name)""".stripMargin)
-      .count()
-  }
-
   test("test create carbon table with buckets like hive sql") {
     sql("CREATE TABLE t13 (ID Int, date Timestamp, country String, name String, phonetype String," +
-      "serialname String, salary Int) STORED AS carbondata CLUSTERED BY (name) INTO 4 BUCKETS")
+    "serialname String, salary Int) STORED AS carbondata CLUSTERED BY (name) INTO 4 BUCKETS")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t13")
     val table = CarbonEnv.getCarbonTable(Option("default"), "t13")(sqlContext.sparkSession)
     checkAnswer(sql("select count(*) from t13"), Row(100))
@@ -263,7 +276,6 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select count(*) from bucketed_parquet_table"), Row(100))
 
 
-    sql("select * from bucketed_parquet_table").show(100)
     val plan = sql(
       """
         |select t1.*, t2.*
@@ -279,7 +291,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       => shuffleExists = true
     }
     assert(!shuffleExists, "shuffle should not exist on bucket tables")
-    // TODO join result is not correct
+    // TODO join result is not correct when one is carbon bucket and another spark bucket
     sql(
       """
         |select t1.*, t2.*
@@ -297,6 +309,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS t4")
     sql("DROP TABLE IF EXISTS t5")
     sql("DROP TABLE IF EXISTS t6")
+    sql("DROP TABLE IF EXISTS t6_")
     sql("DROP TABLE IF EXISTS t7")
     sql("DROP TABLE IF EXISTS t8")
     sql("DROP TABLE IF EXISTS t9")
