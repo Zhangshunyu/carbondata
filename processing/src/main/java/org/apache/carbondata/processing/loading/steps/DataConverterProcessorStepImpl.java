@@ -39,7 +39,7 @@ import org.apache.carbondata.processing.loading.converter.RowConverter;
 import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.partition.Partitioner;
-import org.apache.carbondata.processing.loading.partition.impl.HashPartitionerImpl;
+import org.apache.carbondata.processing.loading.partition.impl.BucketHashPartitionerImpl;
 import org.apache.carbondata.processing.loading.partition.impl.RangePartitionerImpl;
 import org.apache.carbondata.processing.loading.partition.impl.RawRowComparator;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
@@ -106,7 +106,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
 
     // hash partitioner to dispatch rows by bucket column
     this.partitioner =
-        new HashPartitionerImpl(indexes, columnSchemas, bucketingInfo.getNumOfRanges());
+        new BucketHashPartitionerImpl(indexes, columnSchemas, bucketingInfo.getNumOfRanges());
   }
 
   /**

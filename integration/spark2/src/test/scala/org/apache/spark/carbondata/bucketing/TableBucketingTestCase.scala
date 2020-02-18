@@ -21,6 +21,7 @@ import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.execution.exchange.Exchange
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable

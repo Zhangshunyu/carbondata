@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.processing.loading.partition.impl;
 
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -27,18 +26,20 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.processing.loading.partition.Partitioner;
 
+import org.apache.spark.unsafe.types.UTF8String;
+
 /**
- * Hash partitioner implementation
+ * Bucket Hash partitioner implementation
  */
 @InterfaceAudience.Internal
-public class HashPartitionerImpl implements Partitioner<CarbonRow> {
+public class BucketHashPartitionerImpl implements Partitioner<CarbonRow> {
 
   private int numberOfBuckets;
 
   private Hash[] hashes;
 
-  public HashPartitionerImpl(List<Integer> indexes, List<ColumnSchema> columnSchemas,
-      int numberOfBuckets) {
+  public BucketHashPartitionerImpl(List<Integer> indexes, List<ColumnSchema> columnSchemas,
+                                   int numberOfBuckets) {
     this.numberOfBuckets = numberOfBuckets;
     hashes = new Hash[indexes.size()];
     for (int i = 0; i < indexes.size(); i++) {
@@ -46,7 +47,7 @@ public class HashPartitionerImpl implements Partitioner<CarbonRow> {
       if (dataType == DataTypes.SHORT || dataType == DataTypes.INT || dataType == DataTypes.LONG) {
         hashes[i] = new IntegralHash(indexes.get(i));
       } else if (dataType == DataTypes.DOUBLE || dataType == DataTypes.FLOAT ||
-          DataTypes.isDecimal(dataType)) {
+              DataTypes.isDecimal(dataType)) {
         hashes[i] = new DecimalHash(indexes.get(i));
       } else {
         hashes[i] = new StringHash(indexes.get(i));
@@ -103,12 +104,10 @@ public class HashPartitionerImpl implements Partitioner<CarbonRow> {
 
     @Override
     public int getHash(Object[] value) {
-      try {
-        String valueStr = new String((byte[]) value[index], "utf-8");
-        return value[index] != null ? valueStr.hashCode() : 0;
-      } catch (UnsupportedEncodingException e) {
-        return 0;
-      }
+      // we should use the same hash method as spark, otherwise the same value will hash into diff
+      // bucket in carbon/parquet bucket tables the result of join will not correct.
+      UTF8String utf8String = UTF8String.fromBytes((byte[]) value[index]);
+      return value[index] != null ? utf8String.hashCode() : 0;
     }
   }
 }
