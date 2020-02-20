@@ -24,9 +24,8 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.unsafe.types.UTF8String;
 import org.apache.carbondata.processing.loading.partition.Partitioner;
-
-import org.apache.spark.unsafe.types.UTF8String;
 
 /**
  * Bucket Hash partitioner implementation
