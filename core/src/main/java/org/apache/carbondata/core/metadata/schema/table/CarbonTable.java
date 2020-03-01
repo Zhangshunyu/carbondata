@@ -726,7 +726,7 @@ public class CarbonTable implements Serializable, Writable {
       if (CarbonCommonConstants.BUCKET_HASH_METHOD_NATIVE.equals(configuredMethod)) {
         return CarbonCommonConstants.BUCKET_HASH_METHOD_NATIVE;
       }
-      // by default we use murmur3 hash method
+      // by default we use spark_hash_expression hash method
       return CarbonCommonConstants.BUCKET_HASH_METHOD_DEFAULT;
     }
   }

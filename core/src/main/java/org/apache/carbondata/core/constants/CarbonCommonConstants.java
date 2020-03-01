@@ -2383,8 +2383,8 @@ public final class CarbonCommonConstants {
    * Hash method of bucket table
    */
   public static final String BUCKET_HASH_METHOD = "bucket_hash_method";
-  public static final String BUCKET_HASH_METHOD_DEFAULT = "murmur3_x86_32";
-  public static final String BUCKET_HASH_METHOD_MURMUR3_X86_32 = "murmur3_x86_32";
+  public static final String BUCKET_HASH_METHOD_DEFAULT = "spark_hash_expression";
+  public static final String BUCKET_HASH_METHOD_SPARK_EXPRESSION = "spark_hash_expression";
   public static final String BUCKET_HASH_METHOD_NATIVE = "native";
 
   /**

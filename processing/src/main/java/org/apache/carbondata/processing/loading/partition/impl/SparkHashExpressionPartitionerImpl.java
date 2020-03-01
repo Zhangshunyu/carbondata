@@ -24,23 +24,24 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.unsafe.hash.Murmur3_x86_32;
-import org.apache.carbondata.core.unsafe.types.UTF8String;
 import org.apache.carbondata.processing.loading.partition.Partitioner;
 
+import org.apache.spark.unsafe.hash.Murmur3_x86_32;
+import org.apache.spark.unsafe.types.UTF8String;
+
 /**
- * Bucket Hash partitioner implementation using Murmur3_x86_32, it keep the same hash value as
- * spark for given input.
+ * Hash partitioner implementation spark_hash_expression which using Murmur3_x86_32 keep the
+ * same hash value as spark for given input.
  */
 @InterfaceAudience.Internal
-public class BucketMurmur3HashPartitionerImpl implements Partitioner<CarbonRow> {
+public class SparkHashExpressionPartitionerImpl implements Partitioner<CarbonRow> {
 
   private int numberOfBuckets;
 
   private Hash[] hashes;
 
-  public BucketMurmur3HashPartitionerImpl(List<Integer> indexes, List<ColumnSchema> columnSchemas,
-                                          int numberOfBuckets) {
+  public SparkHashExpressionPartitionerImpl(List<Integer> indexes, List<ColumnSchema> columnSchemas,
+                                            int numberOfBuckets) {
     this.numberOfBuckets = numberOfBuckets;
     hashes = new Hash[indexes.size()];
     for (int i = 0; i < indexes.size(); i++) {

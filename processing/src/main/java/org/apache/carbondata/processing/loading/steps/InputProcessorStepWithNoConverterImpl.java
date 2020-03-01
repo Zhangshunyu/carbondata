@@ -50,8 +50,8 @@ import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl;
 import org.apache.carbondata.processing.loading.exception.BadRecordFoundException;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.partition.Partitioner;
-import org.apache.carbondata.processing.loading.partition.impl.BucketMurmur3HashPartitionerImpl;
 import org.apache.carbondata.processing.loading.partition.impl.HashPartitionerImpl;
+import org.apache.carbondata.processing.loading.partition.impl.SparkHashExpressionPartitionerImpl;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
@@ -146,8 +146,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     // hash partitioner to dispatch rows by bucket column
     if (CarbonCommonConstants.BUCKET_HASH_METHOD_DEFAULT.equals(
             configuration.getBucketHashMethod())) {
-      // murmur3 keep consistent with both carbon and spark tables.
-      this.partitioner = new BucketMurmur3HashPartitionerImpl(
+      // keep consistent with both carbon and spark tables.
+      this.partitioner = new SparkHashExpressionPartitionerImpl(
               indexes, columnSchemas, bucketingInfo.getNumOfRanges());
     } else if (CarbonCommonConstants.BUCKET_HASH_METHOD_NATIVE.equals(
             configuration.getBucketHashMethod())) {
@@ -157,8 +157,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       this.partitioner = new HashPartitionerImpl(
               indexes, columnSchemas, bucketingInfo.getNumOfRanges());
     } else {
-      // by default we use murmur3 hash.
-      this.partitioner = new BucketMurmur3HashPartitionerImpl(
+      // by default we use SparkHashExpressionPartitionerImpl hash.
+      this.partitioner = new SparkHashExpressionPartitionerImpl(
               indexes, columnSchemas, bucketingInfo.getNumOfRanges());
     }
 
