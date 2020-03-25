@@ -56,22 +56,22 @@ object CDCExample {
   private val solution = "carbon"
 
   // print result or not to console for debugging
-  private val printDetail = false
+  private val printDetail = true
 
   // number of records for target table before start CDC
-  private val numInitialRows = 100000
+  private val numInitialRows = 10000
 
   // number of records to insert for every batch
   private val numInsertPerBatch = 1000
 
   // number of records to update for every batch
-  private val numUpdatePerBatch = 9000
+  private val numUpdatePerBatch = 2000
 
   // number of records to delete for every batch
   private val numDeletePerBatch = 1000
 
   // number of batch to simulate CDC
-  private val numBatch = 10
+  private val numBatch = 1
 
   private val random = new Random()
 
@@ -190,14 +190,16 @@ object CDCExample {
   private def printTarget(spark: SparkSession, i: Int) = {
     if (printDetail) {
       println(s"target table after CDC batch$i")
-      spark.sql("select * from target order by id").show(false)
+      println("===========================current target")
+      spark.sql("select count(*) from target").show(false)
     }
   }
 
   private def printChange(spark: SparkSession, i: Int) = {
     if (printDetail) {
       println(s"CDC batch$i")
-      spark.sql("select * from change").show(100, false)
+      println("===========================current target")
+      spark.sql("select count(*) from change").show(100, false)
     }
   }
 
@@ -224,11 +226,8 @@ object CDCExample {
 
     // prepare target table
     generateTarget(spark)
-
-    if (printDetail) {
-      println("## target table")
-      spark.sql("select * from target").show(100, false)
-    }
+    println("===========================init target")
+    spark.sql("select count(*) from target").show(100, false)
 
     var updateTime = 0L
 
@@ -236,8 +235,8 @@ object CDCExample {
     (1 to numBatch).foreach { i =>
       // prepare for change data
       generateChange(spark)
-
-      printChange(spark, i)
+      println("===========================init target")
+      spark.sql("select count(*) from change").show(100, false)
 
       // apply change to target table
       val time = timeIt { () =>
@@ -250,7 +249,8 @@ object CDCExample {
       }
       updateTime += time
       println(s"done! ${timeFormatted(time)}")
-      printTarget(spark, i)
+      println("===========================final target")
+      spark.sql("select count(*) from target").show(100, false)
     }
 
     // do a query after all changes to compare query time
