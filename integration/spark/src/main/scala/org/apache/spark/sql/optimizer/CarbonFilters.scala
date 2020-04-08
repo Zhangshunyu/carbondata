@@ -25,6 +25,7 @@ import scala.util.Try
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonContainsWith
 import org.apache.spark.sql.CarbonEndsWith
@@ -376,6 +377,42 @@ object CarbonFilters {
     val carbonTable = CarbonEnv.getCarbonTable(identifier)(sparkSession)
     getPartitions(partitionFilters, sparkSession, carbonTable)
   }
+
+  def getPrunedPartitions(relation: LogicalRelation,
+                          filterPredicates: Seq[Expression]): Seq[PartitionSpec] = {
+    val names = relation.catalogTable match {
+      case Some(table) => table.partitionColumnNames
+      case _ => Seq.empty
+    }
+    // Get the current partitions from table.
+    var partitions: Seq[PartitionSpec] = null
+    if (names.nonEmpty) {
+      val partitionSet = AttributeSet(names
+        .map(p => relation.output.find(_.name.equalsIgnoreCase(p)).get))
+      val partitionKeyFilters = CarbonToSparkAdapter
+        .getPartitionKeyFilter(partitionSet, filterPredicates)
+      // Update the name with lower case as it is case sensitive while getting partition info.
+      val updatedPartitionFilters = partitionKeyFilters.map { exp =>
+        exp.transform {
+          case attr: AttributeReference =>
+            CarbonToSparkAdapter.createAttributeReference(
+              attr.name.toLowerCase,
+              attr.dataType,
+              attr.nullable,
+              attr.metadata,
+              attr.exprId,
+              attr.qualifier)
+        }
+      }
+      partitions =
+        CarbonFilters.getPartitions(
+          updatedPartitionFilters.toSeq,
+          SparkSession.getActiveSession.get,
+          relation.catalogTable.get.identifier).orNull
+    }
+    partitions
+  }
+
   /**
    * Fetches partition information from hive
    * @param partitionFilters
